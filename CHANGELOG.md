@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-06
+
 ### Fixed
 
 - A general postal code such as 3000 or 8000, which the forecast service does
@@ -28,5 +30,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   weather condition.
 - User interface in English, German, French and Italian.
 
-[Unreleased]: https://github.com/schopf16/fibaro-qa-meteoswiss/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/schopf16/fibaro-qa-meteoswiss/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/schopf16/fibaro-qa-meteoswiss/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/schopf16/fibaro-qa-meteoswiss/releases/tag/v1.0.0
