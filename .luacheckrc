@@ -32,6 +32,6 @@ files["tests/"] = {
   globals = {
     "TESTS", "test", "eq", "ok", "raises", "LOGS", "logText", "advance",
     "pendingTimers", "resetStub", "API", "FakeQA", "MANIFEST", "STARTED",
-    "fibaro", "api", "json", "setTimeout", "clearTimeout", "__TAG",
+    "fibaro", "api", "net", "json", "setTimeout", "clearTimeout", "__TAG",
   },
 }
