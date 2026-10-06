@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- A general postal code such as 3000 or 8000, which the forecast service does
+  not know, only showed "Forecast unavailable". The QuickApp now shows
+  "Postal code unknown - please check" and logs how to choose the code.
+
 ## [1.0.0] - 2026-10-06
 
 ### Added

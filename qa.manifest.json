@@ -1,7 +1,7 @@
 {
   "name": "Swiss Weather Forecast",
   "logTag": "SwissWeather",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "com.fibaro.weather",
   "repository": "https://github.com/schopf16/fibaro-qa-meteoswiss",
   "userDescription": "Swiss weather forecasts for a postal code (data: MeteoSwiss): forecast tables for scenes and four signal child devices.",

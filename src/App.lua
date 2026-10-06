@@ -321,12 +321,12 @@ local function scheduleNext(delayMs)
   Timer.after("poll", delayMs, App.poll)
 end
 
-local function onFailure(reason)
+local function onFailure(reason, statusKey)
   requestInFlight = false
   retryCount = math.min(retryCount + 1, 10)
   Log.warn("Forecast request failed: %s; retry in %s s", reason,
     math.floor(Timer.backoff(retryCount, RETRY_BASE_MS, RETRY_MAX_MS) / 1000))
-  setStatus("status.error")
+  setStatus(statusKey or "status.error")
   scheduleNext(Timer.backoff(retryCount, RETRY_BASE_MS, RETRY_MAX_MS))
 end
 
@@ -334,6 +334,15 @@ local function onSuccess(response)
   requestInFlight = false
   if type(response) ~= "table" then
     onFailure("unexpected HTTP response")
+    return
+  end
+  if response.status == 404 then
+    -- The service knows the postal codes of places, not general ones such as 3000 or 8000.
+    if retryCount == 0 then
+      Log.error("The forecast service does not know the configured postal code (HTTP 404); use the postal code "
+        .. "of the place itself, e.g. 3011 instead of 3000")
+    end
+    onFailure("HTTP 404", "status.unknownPostalCode")
     return
   end
   if response.status ~= 200 then
@@ -382,6 +391,7 @@ end
 
 function App.start(quickApp, cfg)
   qa = quickApp
+  requestInFlight, retryCount = false, 0
   App.setConfig(cfg)
   Ui.setText("lblLocation", "ui.location.configured", { postalCode = cfg.postalCode })
   App.Children.sync(qa)

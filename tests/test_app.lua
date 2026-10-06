@@ -326,6 +326,21 @@ test("a successful response publishes the tables and the weather properties", fu
   Timer.cancelAll()
 end)
 
+test("an unknown postal code is reported once with a clear status", function()
+  stubHttp(404, "")
+  local qa = startQA()
+  advance(0)
+  advance(60000)
+  local errors = 0
+  for _, entry in ipairs(LOGS) do
+    if entry.message:find("does not know the configured postal code", 1, true) then errors = errors + 1 end
+  end
+  eq(errors, 1, "logged once, not on every retry")
+  ok(not logText():find("8001", 1, true), "the postal code is not logged")
+  ok(qa.properties.log:find("Postal code unknown", 1, true), qa.properties.log)
+  Timer.cancelAll()
+end)
+
 test("failures keep the old tables and retry with back-off", function()
   local requests = stubHttp(500, "")
   local qa = startQA()
