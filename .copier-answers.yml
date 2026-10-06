@@ -2,8 +2,8 @@
 _commit: 04f2d2b
 _src_path: gh:schopf16/fibaro-qa-template
 copyright_year: 2026
-description: Swiss weather forecasts for a postal code (data: MeteoSwiss) as forecast
-    tables for scenes and four signal child devices.
+description: 'Swiss weather forecasts for a postal code (data: MeteoSwiss) as forecast
+    tables for scenes and four signal child devices.'
 device_type: com.fibaro.weather
 internet_access: true
 log_tag: SwissWeather
