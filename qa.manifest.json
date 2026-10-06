@@ -1,0 +1,38 @@
+{
+  "name": "Swiss Weather Forecast",
+  "logTag": "SwissWeather",
+  "version": "1.0.0",
+  "type": "com.fibaro.weather",
+  "repository": "https://github.com/schopf16/fibaro-qa-meteoswiss",
+  "userDescription": "Swiss weather forecasts for a postal code (data: MeteoSwiss): forecast tables for scenes and four signal child devices.",
+  "_comment_deviceIcon": "Optional: ID of a built-in HC3 device icon (GET /api/icons), applied on import.",
+  "deviceIcon": 424,
+  "initialInterfaces": [],
+
+  "_comment_variables": "postalCode and thresholds are user configuration. forecast10m, forecastHourly, forecast3h and forecastDaily contain JSON tables for scenes. Tests enforce that App.CONFIG and this list match.",
+  "quickAppVariables": [
+    { "name": "postalCode", "type": "string", "value": "" },
+    { "name": "rainThresholdMm", "type": "string", "value": "1.0" },
+    { "name": "strongWindThresholdKmh", "type": "string", "value": "45" },
+    { "name": "warmDayThresholdC", "type": "string", "value": "18" },
+    { "name": "forecast10m", "type": "string", "value": "" },
+    { "name": "forecastHourly", "type": "string", "value": "" },
+    { "name": "forecast3h", "type": "string", "value": "" },
+    { "name": "forecastDaily", "type": "string", "value": "" }
+  ],
+
+  "_comment_ui": "Rows of elements, top to bottom. Types: label, button. Texts here are English; App.UI translates them at start. A button's events (default onReleased) call QuickApp:ui<id><Event>, e.g. uibtnRefreshOnReleased - the HC3 enforces this name on import, so it must exist in src/main.lua.",
+  "ui": [
+    [ { "type": "label",  "id": "lblStatus",  "text": "Status" } ],
+    [ { "type": "button", "id": "btnRefresh", "text": "Refresh", "events": ["onReleased"] } ],
+    [ { "type": "label", "id": "lblLocation", "text": "Location: set postalCode in QuickApp variables" } ]
+  ],
+
+  "_comment_files": "Project files in load order, after the library in src/lib/files.json. The isMain file must be last.",
+  "files": [
+    { "name": "Strings", "path": "src/Strings.lua" },
+    { "name": "App",     "path": "src/App.lua" },
+    { "name": "Children", "path": "src/Children.lua" },
+    { "name": "main",    "path": "src/main.lua", "isMain": true }
+  ]
+}

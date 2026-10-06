@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-dev.txt
+      - name: Offline tests on Lua 5.3
+        run: python tools/run_tests.py
+      - name: Manifest check and privacy scan
+        run: python tools/build_fqa.py --check
+      - name: Luacheck (Lua 5.3)
+        uses: lunarmodules/luacheck@v1
+        with:
+          args: src tests

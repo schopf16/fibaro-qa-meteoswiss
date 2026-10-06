@@ -1,0 +1,14 @@
+{
+  "_comment": "Library files in load order; the build puts them before the project files listed in qa.manifest.json.",
+  "files": [
+    { "name": "LibUtil",    "path": "src/lib/Util.lua" },
+    { "name": "LibLog",     "path": "src/lib/Log.lua" },
+    { "name": "LibSafe",    "path": "src/lib/Safe.lua" },
+    { "name": "LibConfig",  "path": "src/lib/Config.lua" },
+    { "name": "LibI18n",    "path": "src/lib/I18n.lua" },
+    { "name": "LibTimer",   "path": "src/lib/Timer.lua" },
+    { "name": "LibUi",      "path": "src/lib/Ui.lua" },
+    { "name": "LibStrings", "path": "src/lib/LibStrings.lua" },
+    { "name": "LibBoot",    "path": "src/lib/Boot.lua" }
+  ]
+}

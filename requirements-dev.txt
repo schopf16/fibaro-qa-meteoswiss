@@ -1,0 +1,2 @@
+# Offline tests run on the real Lua 5.3 interpreter shipped with lupa.
+lupa>=2.7,<3

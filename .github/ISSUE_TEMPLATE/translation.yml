@@ -1,0 +1,27 @@
+name: Translation correction
+description: A text in the user interface is wrong or sounds unnatural
+labels: [translation]
+body:
+  - type: dropdown
+    id: language
+    attributes:
+      label: Language
+      options: [Deutsch, Français, Italiano, English]
+    validations:
+      required: true
+  - type: input
+    id: current
+    attributes:
+      label: Current text
+    validations:
+      required: true
+  - type: input
+    id: proposed
+    attributes:
+      label: Proposed text
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Where does it appear?

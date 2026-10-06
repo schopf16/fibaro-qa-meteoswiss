@@ -1,0 +1,43 @@
+# Push a tag vX.Y.Z matching qa.manifest.json to publish a GitHub release
+# with the .fqa attached.
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-dev.txt
+      - name: Tag must match the manifest version
+        run: |
+          version=$(python -c "import json; print(json.load(open('qa.manifest.json'))['version'])")
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match manifest version $version"
+            exit 1
+          fi
+      - name: Offline tests on Lua 5.3
+        run: python tools/run_tests.py
+      - name: Build
+        run: python tools/build_fqa.py
+      - name: Release notes from CHANGELOG.md
+        run: python tools/release_notes.py "${GITHUB_REF_NAME#v}" > release-notes.md
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          flags=""
+          case "$GITHUB_REF_NAME" in *-*) flags="--prerelease" ;; esac
+          gh release create "$GITHUB_REF_NAME" dist/*.fqa \
+            --title "$GITHUB_REF_NAME" --notes-file release-notes.md $flags

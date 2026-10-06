@@ -1,0 +1,3 @@
+# Literals allowed despite matching a privacy pattern in tools/scan.py.
+# Only genuine false positives belong here - never real addresses or secrets.
+users.noreply.github.com

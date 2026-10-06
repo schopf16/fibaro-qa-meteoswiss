@@ -1,0 +1,14 @@
+{
+  "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
+  "runtime.version": "Lua 5.3",
+  "diagnostics.globals": [
+    "fibaro", "api", "net", "json", "hub", "plugin", "mqtt",
+    "QuickApp", "QuickAppBase", "QuickAppChild", "class", "property",
+    "setTimeout", "clearTimeout", "setInterval", "clearInterval", "__TAG", "urlencode",
+    "QA_INFO", "Util", "Log", "Safe", "Config", "I18n", "Timer", "Ui", "LibStrings", "Boot",
+    "Strings", "App",
+    "TESTS", "test", "eq", "ok", "raises", "LOGS", "logText", "advance",
+    "pendingTimers", "resetStub", "API", "FakeQA", "MANIFEST", "STARTED"
+  ],
+  "diagnostics.disable": ["lowercase-global"]
+}
