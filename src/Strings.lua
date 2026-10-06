@@ -31,6 +31,12 @@ Strings = {
     fr = "Prévisions indisponibles ; nouvelle tentative prévue",
     it = "Previsioni non disponibili; nuovo tentativo pianificato",
   },
+  ["status.unknownPostalCode"] = {
+    en = "Postal code unknown - please check",
+    de = "Postleitzahl unbekannt - bitte prüfen",
+    fr = "Code postal inconnu - veuillez vérifier",
+    it = "Codice postale sconosciuto - verificare",
+  },
   ["child.rainExpected"] = {
     en = "Rain expected",
     de = "Regen erwartet",

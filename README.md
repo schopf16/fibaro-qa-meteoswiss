@@ -36,7 +36,7 @@ the QuickApp - this is how the HC3 applies them.
 
 | Variable | What to enter | Default |
 |---|---|---|
-| `postalCode` | Four-digit Swiss postal code of the location, e.g. `3000` | *(empty, required)* |
+| `postalCode` | Four-digit Swiss postal code of the place, e.g. `8001`. General codes such as 3000 or 8000 are not known to the service: use the code of the place itself (3011, 8001) | *(empty, required)* |
 | `rainThresholdMm` | The rain child switches on when a 10-minute slot (current or next) forecasts **more** than this amount | `1.0` mm |
 | `strongWindThresholdKmh` | The wind child switches on when the gust forecast for the current or next hour **reaches** this speed | `45` km/h |
 | `warmDayThresholdC` | Minimum daily maximum temperature for a nice day | `18` °C |
@@ -228,6 +228,10 @@ appends its device ID, e.g. `SWISSWEATHER_123`.
    never appear; if they do, please include them.
 5. Open an [issue](https://github.com/schopf16/fibaro-qa-meteoswiss/issues/new?template=bug_report.yml)
    with the log.
+
+"Postal code unknown - please check" means the service does not know the
+postal code: general codes such as 3000 (Bern) or 8000 (Zurich) do not work,
+the code of the place itself does (3011, 8001).
 
 "Forecast unavailable; retry scheduled" means the request failed (no internet,
 service changed or unavailable). The QuickApp retries after 1 minute, then
