@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-06
+
 ### Added
 
 - Weather forecasts for a Swiss postal code (data: MeteoSwiss), refreshed every
@@ -20,4 +22,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   weather condition.
 - User interface in English, German, French and Italian.
 
-[Unreleased]: https://github.com/schopf16/fibaro-qa-meteoswiss/commits/main
+[Unreleased]: https://github.com/schopf16/fibaro-qa-meteoswiss/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/schopf16/fibaro-qa-meteoswiss/releases/tag/v1.0.0
