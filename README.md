@@ -233,9 +233,14 @@ appends its device ID, e.g. `SWISSWEATHER_123`.
 postal code: general codes such as 3000 (Bern) or 8000 (Zurich) do not work,
 the code of the place itself does (3011, 8001).
 
-"Forecast unavailable; retry scheduled" means the request failed (no internet,
-service changed or unavailable). The QuickApp retries after 1 minute, then
-with growing intervals up to 30 minutes, and keeps the last forecast tables.
+When a request fails (no internet, service changed or unavailable), the
+QuickApp retries after 1 minute, then with growing intervals up to 30 minutes,
+and keeps the last forecast tables. A single failed request is only logged with
+`logLevel = "debug"`. If no forecast has arrived for one hour, the status shows
+"Forecast unavailable; retry scheduled" and the log shows an error such as
+`No forecast received for 66 min (7 failed requests, last: HTTP 503)`. The
+error is repeated every six hours while the problem lasts, and the end of the
+outage is logged as well.
 
 ## Support
 
