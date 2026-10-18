@@ -39,12 +39,24 @@ App.Children = {}
 local API_BASE = "https://app-prod-ws.meteoswiss-app.ch/v1/plzDetail?plz="
 local HTTP_TIMEOUT_MS = 15000
 local OUTPUT_VARIABLES = { "forecast10m", "forecastHourly", "forecast3h", "forecastDaily" }
+local WATCHDOG_MS = HTTP_TIMEOUT_MS + 15000 -- a request without any callback by then is abandoned
 local RETRY_BASE_MS, RETRY_MAX_MS = 60000, 1800000
 local MAX_TABLE_BYTES = 60000 -- per output variable; longer tables lose their last rows
+-- Single failed requests are only logged at debug level. Once no forecast has
+-- arrived for OUTAGE_REPORT_SEC, an error is logged, and repeated every
+-- OUTAGE_REMIND_SEC while the outage lasts.
+local OUTAGE_REPORT_SEC = 3600
+local OUTAGE_REMIND_SEC = 6 * 3600
 
 local qa, config = nil, {}
-local requestInFlight = false
+local requestId = 0 -- id of the request in flight, 0 when none
+local requestCounter = 0
 local retryCount = 0
+local startedAt, lastSuccessAt = nil, nil
+local outage = nil -- { since, failures, reason, reportedAt } while requests fail
+
+--- Current time in seconds; replaced by the tests.
+App.clock = os.time
 
 local CHILD_CATALOG = {
   rainExpected = { labelKey = "child.rainExpected", source = "rain", binary = true },
@@ -321,17 +333,62 @@ local function scheduleNext(delayMs)
   Timer.after("poll", delayMs, App.poll)
 end
 
-local function onFailure(reason, statusKey)
-  requestInFlight = false
+local function endRequest()
+  requestId = 0
+  Timer.cancel("watchdog")
+end
+
+local function reportOutage(state, now)
+  local minutes = math.floor((now - state.since) / 60)
+  if lastSuccessAt then
+    Log.error("No forecast received for %s min (%s failed requests, last: %s); the forecast tables and "
+      .. "signals keep the values from %s", minutes, state.failures, state.reason,
+      os.date("%Y-%m-%d %H:%M", lastSuccessAt))
+  else
+    Log.error("No forecast received since the start %s min ago (%s failed requests, last: %s)",
+      minutes, state.failures, state.reason)
+  end
+end
+
+--- Count a failed request and schedule the retry. `reported` marks a failure
+-- that was already logged as an error, so the outage report waits for the reminder.
+local function onFailure(reason, statusKey, reported)
+  endRequest()
   retryCount = math.min(retryCount + 1, 10)
-  Log.warn("Forecast request failed: %s; retry in %s s", reason,
-    math.floor(Timer.backoff(retryCount, RETRY_BASE_MS, RETRY_MAX_MS) / 1000))
-  setStatus(statusKey or "status.error")
-  scheduleNext(Timer.backoff(retryCount, RETRY_BASE_MS, RETRY_MAX_MS))
+  local delayMs = Timer.backoff(retryCount, RETRY_BASE_MS, RETRY_MAX_MS)
+  local now = App.clock()
+  local state = outage or { since = lastSuccessAt or startedAt or now, failures = 0 }
+  outage = state
+  state.failures = state.failures + 1
+  state.reason = reason
+  if reported and not state.reportedAt then state.reportedAt = now end
+  Log.debug("Forecast request failed: %s; %s failed requests in a row, retry in %s s", reason,
+    state.failures, delayMs // 1000)
+  local due
+  if state.reportedAt then
+    due = now - state.reportedAt >= OUTAGE_REMIND_SEC
+  else
+    due = now - state.since >= OUTAGE_REPORT_SEC
+  end
+  if due then
+    state.reportedAt = now
+    reportOutage(state, now)
+  end
+  -- A short outage keeps "updated at ..." in the status: the data is still recent.
+  if state.reportedAt or not lastSuccessAt then setStatus(statusKey or "status.error") end
+  scheduleNext(delayMs)
+end
+
+local function header(response, name)
+  if type(response.headers) ~= "table" then return nil end
+  for key, value in pairs(response.headers) do
+    if type(key) == "string" and key:lower() == name then return tostring(value) end
+  end
+  return nil
 end
 
 local function onSuccess(response)
-  requestInFlight = false
+  endRequest()
   if type(response) ~= "table" then
     onFailure("unexpected HTTP response")
     return
@@ -342,7 +399,7 @@ local function onSuccess(response)
       Log.error("The forecast service does not know the configured postal code (HTTP 404); use the postal code "
         .. "of the place itself, e.g. 3011 instead of 3000")
     end
-    onFailure("HTTP 404", "status.unknownPostalCode")
+    onFailure("HTTP 404", "status.unknownPostalCode", true)
     return
   end
   if response.status ~= 200 then
@@ -351,6 +408,12 @@ local function onSuccess(response)
   end
   if type(response.data) ~= "string" then
     onFailure("response body is missing")
+    return
+  end
+  -- The service answers in XML unless JSON is requested; reject anything else early.
+  local contentType = header(response, "content-type")
+  if contentType and not contentType:lower():find("json", 1, true) then
+    onFailure("unexpected content type " .. contentType:sub(1, 60))
     return
   end
   if #response.data > 100000 then
@@ -373,14 +436,26 @@ local function onSuccess(response)
     return
   end
   retryCount = 0
+  local now = App.clock()
+  if outage then
+    local minutes = math.floor((now - outage.since) / 60)
+    if outage.reportedAt then
+      Log.info("Forecast received again after %s min without data (%s failed requests)", minutes, outage.failures)
+    else
+      Log.debug("Forecast received again after %s failed requests", outage.failures)
+    end
+    outage = nil
+  end
+  lastSuccessAt = now
   setStatus("status.updated", { time = os.date("%H:%M") })
   Log.info("Forecast updated: %s 10-minute, %s hourly, %s three-hour and %s daily rows",
     #tables.forecast10m.rows, #tables.forecastHourly.rows, #tables.forecast3h.rows, #tables.forecastDaily.rows)
   scheduleNext(App.OPTIONS.pollIntervalSec * 1000)
 end
 
-local function onHttpError(_errorMessage)
-  onFailure("connection error")
+local function onHttpError(errorMessage)
+  local detail = type(errorMessage) == "string" and errorMessage:sub(1, 80) or "unknown"
+  onFailure("connection error: " .. detail)
 end
 
 --- Start the fetch loop after Boot has validated configuration.
@@ -391,7 +466,8 @@ end
 
 function App.start(quickApp, cfg)
   qa = quickApp
-  requestInFlight, retryCount = false, 0
+  requestId, retryCount = 0, 0
+  startedAt, lastSuccessAt, outage = App.clock(), nil, nil
   App.setConfig(cfg)
   Ui.setText("lblLocation", "ui.location.configured", { postalCode = cfg.postalCode })
   App.Children.sync(qa)
@@ -401,23 +477,37 @@ function App.start(quickApp, cfg)
 end
 
 --- Fetch and validate one response. Only one request may be active at a time.
+-- A watchdog ends a request whose callbacks never arrive, and responses of an
+-- abandoned request are ignored, so a stuck request cannot stop the polling.
 function App.poll()
-  if requestInFlight then
-    Log.warn("Forecast request is still running; skipping this poll")
-    scheduleNext(App.OPTIONS.pollIntervalSec * 1000)
+  if requestId ~= 0 then
+    Log.debug("Forecast request is still running; skipping this poll")
     return
   end
-  requestInFlight = true
+  requestCounter = requestCounter + 1
+  local id = requestCounter
+  requestId = id
+  local function current(handler)
+    return function(...)
+      if requestId == id then handler(...) end
+    end
+  end
+  Timer.after("watchdog", WATCHDOG_MS, current(function()
+    onFailure("no response within " .. WATCHDOG_MS // 1000 .. " s")
+  end))
   local url = API_BASE .. config.postalCode .. "00"
   Log.debug("Requesting forecast")
   local ok = pcall(function()
     net.HTTPClient({ timeout = HTTP_TIMEOUT_MS }):request(url, {
-      options = { method = "GET", timeout = HTTP_TIMEOUT_MS, checkCertificate = true },
-      success = Safe.wrap("forecast response", onSuccess),
-      error = Safe.wrap("forecast network error", onHttpError),
+      options = {
+        method = "GET", timeout = HTTP_TIMEOUT_MS, checkCertificate = true,
+        headers = { Accept = "application/json" },
+      },
+      success = Safe.wrap("forecast response", current(onSuccess)),
+      error = Safe.wrap("forecast network error", current(onHttpError)),
     })
   end)
-  if not ok then onFailure("request could not be started") end
+  if not ok and requestId == id then onFailure("request could not be started") end
 end
 
 --- Handler for the Refresh button.

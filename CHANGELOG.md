@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- No forecast arrived any more: the service answers in XML unless JSON is
+  requested explicitly. The request now asks for JSON, and an answer of
+  another content type is rejected with a clear reason.
+- A request that never answered could block all further updates. It is now
+  abandoned after 30 seconds and retried.
+
+### Changed
+
+- A single failed request is no longer logged as a warning. If no forecast has
+  arrived for one hour, one error with the duration, the number of failed
+  requests and the last reason is logged, repeated every six hours; the end of
+  the outage is logged as well. The status keeps "Forecast updated at ..."
+  during shorter interruptions.
+
 ## [1.0.1] - 2026-10-06
 
 ### Fixed

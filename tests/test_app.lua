@@ -292,26 +292,57 @@ end)
 
 -- Requests -------------------------------------------------------------------------------
 
-local function stubHttp(status, body)
-  local requests = 0
+--- Answer every request with status and body; status nil is a network error,
+-- status false never calls back. Returns the request count and the last options.
+local function stubHttp(status, body, headers)
+  local requests, last = 0, nil
   net = { HTTPClient = function()
     return { request = function(_, url, options)
-      requests = requests + 1
+      requests, last = requests + 1, options
       ok(url:find("plz=800100", 1, true), url)
       eq(options.options.checkCertificate, true)
-      if status then options.success({ status = status, data = body }) else options.error("timeout") end
+      eq(options.options.headers.Accept, "application/json")
+      if status then
+        headers = headers or { ["Content-Type"] = "application/json" }
+        options.success({ status = status, data = body, headers = headers })
+      elseif status == nil then
+        options.error("Operation timed out")
+      end
     end }
   end }
-  return function() return requests end
+  return function() return requests end, function() return last end
+end
+
+-- Wall clock for App, moved together with the timer clock by elapse().
+local epoch = 0
+App.clock = function() return epoch end
+
+local function elapse(ms)
+  repeat
+    local part = math.min(10000, ms)
+    epoch = epoch + part / 1000
+    advance(part)
+    ms = ms - part
+  until ms <= 0
 end
 
 local function startQA()
   DEVICES, NEXT_ID = {}, 200
+  epoch = 1800000000
   local qa = childQA({})
   I18n.register(App.STRINGS)
   Ui.init(qa, App.UI)
   App.start(qa, CONFIG)
   return qa
+end
+
+-- level is the HC3 message type: Log.info writes "debug", Log.warn "warning".
+local function countLogs(level, text)
+  local count = 0
+  for _, entry in ipairs(LOGS) do
+    if entry.level == level and (not text or entry.message:find(text, 1, true)) then count = count + 1 end
+  end
+  return count
 end
 
 test("a successful response publishes the tables and the weather properties", function()
@@ -342,11 +373,13 @@ test("an unknown postal code is reported once with a clear status", function()
 end)
 
 test("failures keep the old tables and retry with back-off", function()
+  Log.setLevel("debug")
   local requests = stubHttp(500, "")
   local qa = startQA()
   advance(0)
   eq(qa.variables.forecastHourly, nil)
-  ok(logText():find("HTTP 500; retry in 60 s", 1, true), logText())
+  ok(logText():find("HTTP 500; 1 failed requests in a row, retry in 60 s", 1, true), logText())
+  ok(qa.properties.log:find("unavailable", 1, true), "no forecast yet: " .. qa.properties.log)
   advance(60000)
   eq(requests(), 2)
   stubHttp(200, string.rep(" ", 100001))
@@ -354,6 +387,63 @@ test("failures keep the old tables and retry with back-off", function()
   ok(logText():find("response exceeds 100000 bytes", 1, true), logText())
   stubHttp(nil)
   advance(240000)
-  ok(logText():find("connection error", 1, true), logText())
+  ok(logText():find("connection error: Operation timed out", 1, true), logText())
+  Log.setLevel("info")
+  Timer.cancelAll()
+end)
+
+test("an XML answer is rejected by its content type", function()
+  Log.setLevel("debug")
+  stubHttp(200, "<PLZDetail></PLZDetail>", { ["Content-Type"] = "application/xhtml+xml" })
+  startQA()
+  advance(0)
+  ok(logText():find("unexpected content type application/xhtml+xml", 1, true), logText())
+  eq(countLogs("error"), 0, "a single failure is no error")
+  Log.setLevel("info")
+  Timer.cancelAll()
+end)
+
+test("an outage is reported once after an hour, repeated every six hours, and its end", function()
+  stubHttp(200, json.encode(response()))
+  local qa = startQA()
+  elapse(0)
+  local status = qa.properties.log
+  stubHttp(503, "")
+  elapse(59 * 60000)
+  eq(countLogs("warning") + countLogs("error"), 0, "short outage stays quiet: " .. logText())
+  eq(qa.properties.log, status, "status keeps the last update during a short outage")
+  elapse(40 * 60000)
+  eq(countLogs("error", "No forecast received for"), 1, logText())
+  ok(logText():find("last: HTTP 503", 1, true), logText())
+  ok(qa.properties.log:find("unavailable", 1, true), qa.properties.log)
+  elapse(5 * 3600000)
+  eq(countLogs("error", "No forecast received for"), 1, "no repetition before six hours")
+  elapse(3600000)
+  eq(countLogs("error", "No forecast received for"), 2, "reminder after six hours")
+  stubHttp(200, json.encode(response()))
+  elapse(30 * 60000)
+  eq(countLogs("debug", "Forecast received again after"), 1, logText())
+  ok(qa.properties.log:find("updated", 1, true), qa.properties.log)
+  Timer.cancelAll()
+end)
+
+test("a request without any callback is abandoned and retried", function()
+  Log.setLevel("debug")
+  local requests, lastOptions = stubHttp(false)
+  startQA()
+  elapse(0)
+  eq(requests(), 1)
+  elapse(20000)
+  ok(not logText():find("no response", 1, true), "the request may still answer")
+  elapse(10000)
+  ok(logText():find("no response within 30 s", 1, true), logText())
+  local stuck = lastOptions()
+  local retries = stubHttp(200, json.encode(response()))
+  elapse(60000)
+  eq(retries(), 1, "a new request was sent after the watchdog")
+  stuck.success({ status = 500, data = "", headers = {} })
+  ok(not logText():find("HTTP 500", 1, true), "the late answer of the abandoned request is ignored")
+  eq(countLogs("debug", "Forecast updated"), 1)
+  Log.setLevel("info")
   Timer.cancelAll()
 end)
