@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-10-18
+
 ### Fixed
 
 - No forecast arrived any more: the service answers in XML unless JSON is
@@ -46,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   weather condition.
 - User interface in English, German, French and Italian.
 
-[Unreleased]: https://github.com/schopf16/fibaro-qa-meteoswiss/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/schopf16/fibaro-qa-meteoswiss/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/schopf16/fibaro-qa-meteoswiss/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/schopf16/fibaro-qa-meteoswiss/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/schopf16/fibaro-qa-meteoswiss/releases/tag/v1.0.0
