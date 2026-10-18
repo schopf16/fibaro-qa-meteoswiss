@@ -303,7 +303,8 @@ local function stubHttp(status, body, headers)
       eq(options.options.checkCertificate, true)
       eq(options.options.headers.Accept, "application/json")
       if status then
-        options.success({ status = status, data = body, headers = headers or { ["Content-Type"] = "application/json" } })
+        headers = headers or { ["Content-Type"] = "application/json" }
+        options.success({ status = status, data = body, headers = headers })
       elseif status == nil then
         options.error("Operation timed out")
       end
