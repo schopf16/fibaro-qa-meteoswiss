@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-20
+
 ### Added
 
 - Forecast tables carry `startEpoch` (start of the first row) and
@@ -53,7 +55,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   weather condition.
 - User interface in English, German, French and Italian.
 
-[Unreleased]: https://github.com/schopf16/fibaro-qa-meteoswiss/compare/v1.0.2...HEAD
+[Unreleased]: https://github.com/schopf16/fibaro-qa-meteoswiss/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/schopf16/fibaro-qa-meteoswiss/compare/v1.0.2...v1.1.0
 [1.0.2]: https://github.com/schopf16/fibaro-qa-meteoswiss/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/schopf16/fibaro-qa-meteoswiss/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/schopf16/fibaro-qa-meteoswiss/releases/tag/v1.0.0
