@@ -80,6 +80,13 @@ test("a response becomes four tables with the same envelope", function()
     ok(#t.rows > 0, name .. " has no rows")
   end
   eq(tables.forecastHourly.resolution, "PT1H")
+  eq(tables.forecast10m.slotSeconds, 600)
+  eq(tables.forecastHourly.slotSeconds, 3600)
+  eq(tables.forecast3h.slotSeconds, 10800)
+  eq(tables.forecastDaily.slotSeconds, 86400)
+  for _, name in ipairs({ "forecast10m", "forecastHourly", "forecast3h", "forecastDaily" }) do
+    eq(tables[name].startEpoch, tables[name].rows[1].epochSeconds, name .. " startEpoch")
+  end
   eq(tables.forecastHourly.units.windGustKmh, "km/h")
 end)
 

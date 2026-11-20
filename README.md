@@ -130,6 +130,8 @@ Every table has the same envelope:
 {
   "schemaVersion": 1,
   "resolution": "PT1H",
+  "slotSeconds": 3600,
+  "startEpoch": 1791205200,
   "timeZone": "Europe/Zurich",
   "generatedAtUtc": "2026-10-05T12:00:00Z",
   "units": { "windGustKmh": "km/h" },
@@ -146,6 +148,10 @@ Every table has the same envelope:
 
 - Sub-daily `time` values are UTC timestamps (ISO 8601); daily `time` values
   are local dates (`YYYY-MM-DD`). Every row has `epochSeconds`.
+- `startEpoch` is the start of the first row. `slotSeconds` is the length of
+  one interval (600, 3600, 10800 or 86400; a daily interval is 23 or 25 hours
+  on the days daylight saving time changes). A row is still valid while
+  `epochSeconds + slotSeconds > os.time()`.
 - `current` marks the interval that contains the present moment; past
   intervals are not included.
 - A value the forecast does not provide is missing from `values`, never
