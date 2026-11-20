@@ -80,6 +80,8 @@ local function valueAt(values, index)
   return nil
 end
 
+local SLOT_SECONDS = { PT10M = 600, PT1H = 3600, PT3H = 10800, P1D = 86400 }
+
 local function tableEnvelope(resolution, generatedAt, rows, units)
   return {
     schemaVersion = 1,
@@ -87,6 +89,8 @@ local function tableEnvelope(resolution, generatedAt, rows, units)
     location = { postalCode = config.postalCode },
     timeZone = "Europe/Zurich",
     resolution = resolution,
+    slotSeconds = SLOT_SECONDS[resolution],
+    startEpoch = rows[1].epochSeconds,
     generatedAtUtc = utcText(generatedAt),
     units = units,
     rows = rows,
